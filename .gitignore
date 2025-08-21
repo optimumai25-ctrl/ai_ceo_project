@@ -1,0 +1,9 @@
+.env
+credentials.json
+credentials/
+token.pickle
+token_drive.pickle
+*.pkl
+chat_history.json
+embeddings/
+__pycache__/
