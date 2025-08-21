@@ -1,9 +1,14 @@
 .env
-credentials.json
+
 credentials/
 token.pickle
 token_drive.pickle
 *.pkl
 chat_history.json
 embeddings/
+__pycache__/
+credentials.json
+.streamlit/secrets.toml
+chat_history.json
+token.pickle
 __pycache__/
