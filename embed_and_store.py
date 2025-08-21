@@ -12,9 +12,12 @@ from tqdm import tqdm
 from chunk_utils import simple_chunks
 
 # -------- Load OpenAI API Key --------
+import streamlit as st
 import openai
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# Use secret key for Streamlit Cloud
+openai.api_key = st.secrets["OPENAI_API_KEY"]
+
 
 # -------- Paths & Config --------
 PARSED_DIR = Path("parsed_data")
