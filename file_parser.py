@@ -1,27 +1,35 @@
 import os
 import io
-import pickle
+import json
+import docx
+import pandas as pd
+import streamlit as st
+from PyPDF2 import PdfReader
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 from google.oauth2 import service_account
-from PyPDF2 import PdfReader
-import docx
-import pandas as pd
 
-# Google Drive API setup
+# ───────────────────────────────────────────────
+# Google Drive Auth via Streamlit Secrets
+# ───────────────────────────────────────────────
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-SERVICE_ACCOUNT_FILE = 'credentials.json'  # Update with your actual path
-FOLDER_NAME = 'AI_CEO_KnowledgeBase'  # Top-level folder in Google Drive
+gdrive_secrets = st.secrets["gdrive"]
 
-# Local output directory
+creds = service_account.Credentials.from_service_account_info(
+    json.loads(json.dumps(gdrive_secrets)), scopes=SCOPES
+)
+service = build('drive', 'v3', credentials=creds)
+
+# ───────────────────────────────────────────────
+# Constants
+# ───────────────────────────────────────────────
+FOLDER_NAME = 'AI_CEO_KnowledgeBase'
 OUTPUT_DIR = 'parsed_data'
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Authenticate and build service
-creds = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-service = build('drive', 'v3', credentials=creds)
-
+# ───────────────────────────────────────────────
+# Drive Navigation & Download
+# ───────────────────────────────────────────────
 def get_folder_id(folder_name):
     query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder'"
     results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
@@ -45,6 +53,9 @@ def download_file(file_id, file_name):
     fh.seek(0)
     return fh
 
+# ───────────────────────────────────────────────
+# File Extractors
+# ───────────────────────────────────────────────
 def extract_text_from_pdf(fh):
     reader = PdfReader(fh)
     return "\n".join([page.extract_text() or "" for page in reader.pages])
@@ -57,6 +68,9 @@ def extract_text_from_excel(fh):
     df = pd.read_excel(fh)
     return df.to_string(index=False)
 
+# ───────────────────────────────────────────────
+# Processing and Saving
+# ───────────────────────────────────────────────
 def process_and_save(file, folder_label):
     file_id = file['id']
     name = file['name']
@@ -86,13 +100,16 @@ def process_and_save(file, folder_label):
     except Exception as e:
         print(f"❌ Error processing {name}: {e}")
 
+# ───────────────────────────────────────────────
+# Main Entry Point
+# ───────────────────────────────────────────────
 def main():
     parent_id = get_folder_id(FOLDER_NAME)
     folders = list_folder_contents(parent_id)
 
     for folder in folders:
         if folder['mimeType'] != 'application/vnd.google-apps.folder':
-            continue  # skip files at root
+            continue
         print(f"\n📁 Scanning folder: {folder['name']}")
         subfolder_id = folder['id']
         files = list_folder_contents(subfolder_id)
