@@ -10,13 +10,19 @@ from googleapiclient.http import MediaIoBaseDownload
 import streamlit as st
 from google.oauth2 import service_account
 
-SCOPES = ["https://www.googleapis.com/auth/drive"]
-gdrive_secrets = st.secrets["gdrive"]
+SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+gdrive2_secrets = st.secrets["gdrive2"]
 
 creds = service_account.Credentials.from_service_account_info(
-    dict(gdrive_secrets), scopes=SCOPES
+    {
+        "type": "authorized_user",
+        "client_id": gdrive2_secrets["client_id"],
+        "client_secret": gdrive2_secrets["client_secret"],
+        "refresh_token": "",  # Not used in service_account context
+        "token_uri": gdrive2_secrets["token_uri"]
+    },
+    scopes=SCOPES
 )
-
 
 # ─────────────────────────────────────────────────────────────
 # Constants
