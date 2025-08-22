@@ -7,20 +7,19 @@ import pandas as pd
 import file_parser
 import embed_and_store
 from answer_with_rag import answer
-from gdrive_uploader import authenticate_drive, find_or_create_folder, upload_or_update_file
+from gdrive_uploader import find_or_create_folder, upload_or_update_file
 
-
-# ──────────────────────────────
+# ──────────────────────────────────
 # Constants
-# ──────────────────────────────
+# ──────────────────────────────────
 HIST_PATH = Path("chat_history.json")
 REFRESH_PATH = Path("last_refresh.txt")
 UPLOAD_DIR = Path("docs")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-# ──────────────────────────────
+# ──────────────────────────────────
 # Helper Functions
-# ──────────────────────────────
+# ──────────────────────────────────
 def load_history():
     if HIST_PATH.exists():
         return json.loads(HIST_PATH.read_text(encoding="utf-8"))
@@ -45,17 +44,17 @@ def export_history_to_csv(history: list) -> bytes:
     df = pd.DataFrame(history)
     return df.to_csv(index=False).encode('utf-8')
 
-# ──────────────────────────────
+# ──────────────────────────────────
 # Page & Sidebar
-# ──────────────────────────────
+# ──────────────────────────────────
 st.set_page_config(page_title="AI CEO Assistant", page_icon="🧠", layout="wide")
 
 st.sidebar.title("🧠 AI CEO Panel")
 mode = st.sidebar.radio("Navigation", ["💬 New Chat", "📜 View History", "🔁 Refresh Data"])
 
-# ──────────────────────────────
+# ──────────────────────────────────
 # Mode: Refresh Embeddings from Drive
-# ──────────────────────────────
+# ──────────────────────────────────
 if mode == "🔁 Refresh Data":
     st.title("🔁 Refresh AI Knowledge Base")
     st.caption("This will re-parse documents and re-embed knowledge vectors.")
@@ -72,12 +71,9 @@ if mode == "🔁 Refresh Data":
             except Exception as e:
                 st.error(f"❌ Failed: {e}")
 
-# ──────────────────────────────
-
-
-# ──────────────────────────────
+# ──────────────────────────────────
 # Mode: View Chat History
-# ──────────────────────────────
+# ──────────────────────────────────
 elif mode == "📜 View History":
     st.title("📜 Chat History")
     history = load_history()
@@ -86,7 +82,7 @@ elif mode == "📜 View History":
         st.info("No chat history found.")
     else:
         for turn in history:
-            role = "👤 You" if turn.get("role") == "user" else "🤖 Assistant"
+            role = "👤 You" if turn.get("role") == "user" else "🧠 Assistant"
             timestamp = turn.get("timestamp", "N/A")
             st.markdown(f"**{role} | [{timestamp}]**  \n{turn.get('content', '')}")
 
@@ -102,9 +98,9 @@ elif mode == "📜 View History":
             reset_chat()
             st.success("History cleared.")
 
-# ──────────────────────────────
+# ──────────────────────────────────
 # Mode: New Chat Interface
-# ──────────────────────────────
+# ──────────────────────────────────
 elif mode == "💬 New Chat":
     st.title("🧠 AI CEO Assistant")
     st.caption("Ask about meetings, projects, hiring, finances, and research. Answers cite your documents.")
@@ -142,9 +138,10 @@ elif mode == "💬 New Chat":
         save_history(history)
 
         try:
-            service = authenticate_drive()
-            root_folder_id = find_or_create_folder(service, "AI_CEO_KnowledgeBase")
+            from gdrive_uploader import service  # directly use service object
+            root_folder_id = find_or_create_folder(service, "AI_CEO_KnowledgeBase", parent_id=st.secrets["shared_drive_id"])
             chat_folder_id = find_or_create_folder(service, "Chat_History", parent_id=root_folder_id)
             upload_or_update_file(service, "chat_history.json", chat_folder_id)
         except Exception as e:
             st.warning(f"⚠️ Failed to upload chat history to Google Drive: {e}")
+
