@@ -1,28 +1,24 @@
 import os
-import io
 import streamlit as st
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.oauth2 import service_account
 
-# -------------------------------
-# 📌 SETUP FROM STREAMLIT SECRETS
-# -------------------------------
+# --------------------------------------------
+# 🔐 Use service account from Streamlit secrets
+# --------------------------------------------
 SCOPES = ["https://www.googleapis.com/auth/drive"]
-gdrive_secrets = st.secrets["gdrive"]  # Service account
-SHARED_DRIVE_ID = st.secrets["shared_drive_id"]  # e.g. "0ABCDEF123xyz"
+gdrive_secrets = st.secrets["gdrive"]  # stored in .streamlit/secrets.toml
+SHARED_DRIVE_ID = st.secrets["shared_drive_id"]  # also stored in secrets
 
-# -------------------------------
-# ✅ AUTHENTICATE SERVICE ACCOUNT
-# -------------------------------
-creds = service_account.Credentials.from_service_account_info(
-    dict(gdrive_secrets), scopes=SCOPES
-)
+# Authenticate using Streamlit secrets
+token_info = dict(gdrive_secrets)
+creds = service_account.Credentials.from_service_account_info(token_info, scopes=SCOPES)
 service = build("drive", "v3", credentials=creds)
 
-# -------------------------------
-# 🔁 FIND OR CREATE FOLDER (SHARED DRIVE)
-# -------------------------------
+# --------------------------------------------
+# 📁 Find or create folder in Shared Drive
+# --------------------------------------------
 def find_or_create_folder(service, folder_name, parent_id):
     query = (
         f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' "
@@ -56,9 +52,9 @@ def find_or_create_folder(service, folder_name, parent_id):
 
     return folder.get('id')
 
-# -------------------------------
-# 📤 UPLOAD OR UPDATE FILE
-# -------------------------------
+# --------------------------------------------
+# ⬆️ Upload or update file to folder
+# --------------------------------------------
 def upload_or_update_file(service, file_path, folder_id):
     file_name = os.path.basename(file_path)
 
@@ -78,7 +74,6 @@ def upload_or_update_file(service, file_path, folder_id):
     media = MediaFileUpload(file_path, resumable=True)
 
     if files:
-        # Update existing file
         file_id = files[0]['id']
         service.files().update(
             fileId=file_id,
@@ -87,7 +82,6 @@ def upload_or_update_file(service, file_path, folder_id):
         ).execute()
         print(f"✅ Updated file: {file_name}")
     else:
-        # Upload new file
         metadata = {
             'name': file_name,
             'parents': [folder_id]
