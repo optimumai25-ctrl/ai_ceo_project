@@ -4,27 +4,31 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.oauth2 import service_account
 
-# --------------------------------------------
-# 🔐 Use service account from Streamlit secrets
-# --------------------------------------------
+# -------------------------------
+# 📌 SETUP FROM STREAMLIT SECRETS
+# -------------------------------
 SCOPES = ["https://www.googleapis.com/auth/drive"]
-gdrive_secrets = st.secrets["gdrive"]  # stored in .streamlit/secrets.toml
-SHARED_DRIVE_ID = st.secrets["shared_drive_id"]  # also stored in secrets
+gdrive_secrets = st.secrets["gdrive"]
 
-# Authenticate using Streamlit secrets
-token_info = dict(gdrive_secrets)
-creds = service_account.Credentials.from_service_account_info(token_info, scopes=SCOPES)
+# ✅ FIXED HERE: access shared_drive_id from nested gdrive block
+SHARED_DRIVE_ID = gdrive_secrets["shared_drive_id"]
+
+# -------------------------------
+# ✅ AUTHENTICATE SERVICE ACCOUNT
+# -------------------------------
+creds = service_account.Credentials.from_service_account_info(
+    dict(gdrive_secrets), scopes=SCOPES
+)
 service = build("drive", "v3", credentials=creds)
 
-# --------------------------------------------
-# 📁 Find or create folder in Shared Drive
-# --------------------------------------------
+# -------------------------------
+# 🔁 FIND OR CREATE FOLDER (SHARED DRIVE)
+# -------------------------------
 def find_or_create_folder(service, folder_name, parent_id):
     query = (
         f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' "
         f"and '{parent_id}' in parents and trashed = false"
     )
-
     results = service.files().list(
         q=query,
         spaces='drive',
@@ -34,7 +38,6 @@ def find_or_create_folder(service, folder_name, parent_id):
     ).execute()
 
     folders = results.get('files', [])
-
     if folders:
         return folders[0]['id']
 
@@ -52,16 +55,13 @@ def find_or_create_folder(service, folder_name, parent_id):
 
     return folder.get('id')
 
-# --------------------------------------------
-# ⬆️ Upload or update file to folder
-# --------------------------------------------
+# -------------------------------
+# 📤 UPLOAD OR UPDATE FILE
+# -------------------------------
 def upload_or_update_file(service, file_path, folder_id):
     file_name = os.path.basename(file_path)
 
-    query = (
-        f"name='{file_name}' and '{folder_id}' in parents and trashed = false"
-    )
-
+    query = f"name='{file_name}' and '{folder_id}' in parents and trashed = false"
     results = service.files().list(
         q=query,
         spaces='drive',
