@@ -7,7 +7,7 @@ import pandas as pd
 import file_parser
 import embed_and_store
 from answer_with_rag import answer
-from gdrive_uploader import find_or_create_folder, upload_or_update_file
+from gdrive_uploader import service, find_or_create_folder, upload_or_update_file
 
 # ──────────────────────────────────
 # Constants
@@ -16,6 +16,7 @@ HIST_PATH = Path("chat_history.json")
 REFRESH_PATH = Path("last_refresh.txt")
 UPLOAD_DIR = Path("docs")
 UPLOAD_DIR.mkdir(exist_ok=True)
+SHARED_DRIVE_ID = "10nW9LN61H03zWADNpUUJKvraOhY-5IoA"  # hardcoded Shared Drive ID
 
 # ──────────────────────────────────
 # Helper Functions
@@ -58,7 +59,7 @@ mode = st.sidebar.radio("Navigation", ["💬 New Chat", "📜 View History", "�
 if mode == "🔁 Refresh Data":
     st.title("🔁 Refresh AI Knowledge Base")
     st.caption("This will re-parse documents and re-embed knowledge vectors.")
-    st.markdown(f"🕓 **Last Refreshed:** {load_refresh_time()}")
+    st.markdown(f"🧓 **Last Refreshed:** {load_refresh_time()}")
 
     if st.button("🚀 Run File Parser + Embedder"):
         with st.spinner("Refreshing knowledge base..."):
@@ -67,7 +68,7 @@ if mode == "🔁 Refresh Data":
                 embed_and_store.main()
                 save_refresh_time()
                 st.success("✅ Data refreshed and embedded successfully.")
-                st.markdown(f"🕓 **Last Refreshed:** {load_refresh_time()}")
+                st.markdown(f"🧓 **Last Refreshed:** {load_refresh_time()}")
             except Exception as e:
                 st.error(f"❌ Failed: {e}")
 
@@ -104,7 +105,7 @@ elif mode == "📜 View History":
 elif mode == "💬 New Chat":
     st.title("🧠 AI CEO Assistant")
     st.caption("Ask about meetings, projects, hiring, finances, and research. Answers cite your documents.")
-    st.markdown(f"🕓 **Last Refreshed:** {load_refresh_time()}")
+    st.markdown(f"🧓 **Last Refreshed:** {load_refresh_time()}")
 
     history = load_history()
 
@@ -138,8 +139,7 @@ elif mode == "💬 New Chat":
         save_history(history)
 
         try:
-            from gdrive_uploader import service  # directly use service object
-            root_folder_id = find_or_create_folder(service, "AI_CEO_KnowledgeBase", parent_id=st.secrets["shared_drive_id"])
+            root_folder_id = find_or_create_folder(service, "AI_CEO_KnowledgeBase", parent_id=SHARED_DRIVE_ID)
             chat_folder_id = find_or_create_folder(service, "Chat_History", parent_id=root_folder_id)
             upload_or_update_file(service, "chat_history.json", chat_folder_id)
         except Exception as e:
