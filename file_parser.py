@@ -2,30 +2,32 @@ import os
 import io
 import streamlit as st
 import docx
-import json
 import pandas as pd
 from PyPDF2 import PdfReader
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
-import streamlit as st
 from google.oauth2 import service_account
 
+# ─────────────────────────────────────────────────────────────
+# ✅ Authentication from Streamlit secrets (gdrive2)
+# ─────────────────────────────────────────────────────────────
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 gdrive2_secrets = st.secrets["gdrive2"]
+
 creds = service_account.Credentials.from_service_account_info(
     dict(gdrive2_secrets), scopes=SCOPES
 )
+service = build("drive", "v3", credentials=creds)
 
 # ─────────────────────────────────────────────────────────────
-# Constants
+# 🔧 Constants
 # ─────────────────────────────────────────────────────────────
-FOLDER_NAME = 'AI_CEO_KnowledgeBase'  # Top-level Drive folder
+FOLDER_NAME = 'AI_CEO_KnowledgeBase'
 OUTPUT_DIR = 'parsed_data'
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-
 # ─────────────────────────────────────────────────────────────
-# Helper Functions
+# 🔍 Helpers
 # ─────────────────────────────────────────────────────────────
 def get_folder_id(folder_name):
     query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder'"
@@ -62,7 +64,6 @@ def extract_text_from_excel(fh):
     df = pd.read_excel(fh)
     return df.to_string(index=False)
 
-
 def process_and_save(file, folder_label):
     file_id = file['id']
     name = file['name']
@@ -92,9 +93,8 @@ def process_and_save(file, folder_label):
     except Exception as e:
         print(f"❌ Error processing {name}: {e}")
 
-
 # ─────────────────────────────────────────────────────────────
-# Entry Point
+# ▶️ Main
 # ─────────────────────────────────────────────────────────────
 def main():
     parent_id = get_folder_id(FOLDER_NAME)
@@ -113,4 +113,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
