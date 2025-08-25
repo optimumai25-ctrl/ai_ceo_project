@@ -8,6 +8,7 @@ import file_parser
 import embed_and_store
 from answer_with_rag import answer
 from gdrive_uploader import service, find_or_create_folder, upload_or_update_file
+SHARED_DRIVE_ID = st.secrets["gdrive"]["shared_drive_id"]
 
 # ──────────────────────────────────
 # Constants
@@ -16,7 +17,7 @@ HIST_PATH = Path("chat_history.json")
 REFRESH_PATH = Path("last_refresh.txt")
 UPLOAD_DIR = Path("docs")
 UPLOAD_DIR.mkdir(exist_ok=True)
-SHARED_DRIVE_ID = "10nW9LN61H03zWADNpUUJKvraOhY-5IoA"  # hardcoded Shared Drive ID
+
 
 # ──────────────────────────────────
 # Helper Functions
