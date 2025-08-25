@@ -8,7 +8,6 @@ import file_parser
 import embed_and_store
 from answer_with_rag import answer
 from gdrive_uploader import service, find_or_create_folder, upload_or_update_file
-SHARED_DRIVE_ID = st.secrets["gdrive"]["shared_drive_id"]
 
 # ──────────────────────────────────
 # Constants
@@ -18,6 +17,9 @@ REFRESH_PATH = Path("last_refresh.txt")
 UPLOAD_DIR = Path("docs")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
+# ✅ Access shared drive ID from Streamlit secrets
+gdrive_secrets = st.secrets["gdrive"]
+SHARED_DRIVE_ID = gdrive_secrets["shared_drive_id"]
 
 # ──────────────────────────────────
 # Helper Functions
@@ -60,16 +62,24 @@ mode = st.sidebar.radio("Navigation", ["💬 New Chat", "📜 View History", "�
 if mode == "🔁 Refresh Data":
     st.title("🔁 Refresh AI Knowledge Base")
     st.caption("This will re-parse documents and re-embed knowledge vectors.")
-    st.markdown(f"🧓 **Last Refreshed:** {load_refresh_time()}")
+    st.markdown(f"🧃 **Last Refreshed:** {load_refresh_time()}")
 
     if st.button("🚀 Run File Parser + Embedder"):
         with st.spinner("Refreshing knowledge base..."):
             try:
                 file_parser.main()
                 embed_and_store.main()
-                save_refresh_time()
-                st.success("✅ Data refreshed and embedded successfully.")
-                st.markdown(f"🧓 **Last Refreshed:** {load_refresh_time()}")
+
+                # ✅ Check FAISS outputs before saving refresh time
+                index_exists = Path("embeddings/faiss.index").exists()
+                meta_exists = Path("embeddings/metadata.pkl").exists()
+
+                if index_exists and meta_exists:
+                    save_refresh_time()
+                    st.success("✅ Data refreshed and embedded successfully.")
+                    st.markdown(f"🧃 **Last Refreshed:** {load_refresh_time()}")
+                else:
+                    st.error("❌ FAISS index or metadata not generated. Please check embed_and_store.py.")
             except Exception as e:
                 st.error(f"❌ Failed: {e}")
 
@@ -106,7 +116,7 @@ elif mode == "📜 View History":
 elif mode == "💬 New Chat":
     st.title("🧠 AI CEO Assistant")
     st.caption("Ask about meetings, projects, hiring, finances, and research. Answers cite your documents.")
-    st.markdown(f"🧓 **Last Refreshed:** {load_refresh_time()}")
+    st.markdown(f"🧃 **Last Refreshed:** {load_refresh_time()}")
 
     history = load_history()
 
