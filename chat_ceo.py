@@ -25,7 +25,7 @@ def login():
             if username_input == USERNAME and password_input == PASSWORD:
                 st.session_state["authenticated"] = True
                 st.success("Login successful.")
-                st.experimental_rerun()
+                st.rerun()  # Updated here
             else:
                 st.error("Invalid username or password.")
 
@@ -81,7 +81,7 @@ st.sidebar.title("🧠 AI CEO Panel")
 st.sidebar.markdown(f"👤 Logged in as: `{USERNAME}`")
 if st.sidebar.button("🔓 Logout"):
     st.session_state["authenticated"] = False
-    st.experimental_rerun()
+    st.rerun()  # Updated here
 
 mode = st.sidebar.radio("Navigation", ["💬 New Chat", "📜 View History", "🔁 Refresh Data"])
 
@@ -169,3 +169,4 @@ elif mode == "💬 New Chat":
         })
 
         save_history(history)
+
