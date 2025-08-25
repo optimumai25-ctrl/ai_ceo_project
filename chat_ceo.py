@@ -7,7 +7,6 @@ import pandas as pd
 import file_parser
 import embed_and_store
 from answer_with_rag import answer
-from gdrive_uploader import service, find_or_create_folder, upload_or_update_file
 
 # ──────────────────────────────────
 # Constants
@@ -17,9 +16,6 @@ REFRESH_PATH = Path("last_refresh.txt")
 UPLOAD_DIR = Path("docs")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-# ✅ Access shared drive ID from Streamlit secrets
-gdrive_secrets = st.secrets["gdrive"]
-SHARED_DRIVE_ID = gdrive_secrets["shared_drive_id"]
 
 # ──────────────────────────────────
 # Helper Functions
@@ -62,24 +58,16 @@ mode = st.sidebar.radio("Navigation", ["💬 New Chat", "📜 View History", "�
 if mode == "🔁 Refresh Data":
     st.title("🔁 Refresh AI Knowledge Base")
     st.caption("This will re-parse documents and re-embed knowledge vectors.")
-    st.markdown(f"🧃 **Last Refreshed:** {load_refresh_time()}")
+    st.markdown(f"🧓 **Last Refreshed:** {load_refresh_time()}")
 
     if st.button("🚀 Run File Parser + Embedder"):
         with st.spinner("Refreshing knowledge base..."):
             try:
                 file_parser.main()
                 embed_and_store.main()
-
-                # ✅ Check FAISS outputs before saving refresh time
-                index_exists = Path("embeddings/faiss.index").exists()
-                meta_exists = Path("embeddings/metadata.pkl").exists()
-
-                if index_exists and meta_exists:
-                    save_refresh_time()
-                    st.success("✅ Data refreshed and embedded successfully.")
-                    st.markdown(f"🧃 **Last Refreshed:** {load_refresh_time()}")
-                else:
-                    st.error("❌ FAISS index or metadata not generated. Please check embed_and_store.py.")
+                save_refresh_time()
+                st.success("✅ Data refreshed and embedded successfully.")
+                st.markdown(f"🧓 **Last Refreshed:** {load_refresh_time()}")
             except Exception as e:
                 st.error(f"❌ Failed: {e}")
 
@@ -116,7 +104,7 @@ elif mode == "📜 View History":
 elif mode == "💬 New Chat":
     st.title("🧠 AI CEO Assistant")
     st.caption("Ask about meetings, projects, hiring, finances, and research. Answers cite your documents.")
-    st.markdown(f"🧃 **Last Refreshed:** {load_refresh_time()}")
+    st.markdown(f"🧓 **Last Refreshed:** {load_refresh_time()}")
 
     history = load_history()
 
@@ -148,11 +136,3 @@ elif mode == "💬 New Chat":
         })
 
         save_history(history)
-
-        try:
-            root_folder_id = find_or_create_folder(service, "AI_CEO_KnowledgeBase", parent_id=SHARED_DRIVE_ID)
-            chat_folder_id = find_or_create_folder(service, "Chat_History", parent_id=root_folder_id)
-            upload_or_update_file(service, "chat_history.json", chat_folder_id)
-        except Exception as e:
-            st.warning(f"⚠️ Failed to upload chat history to Google Drive: {e}")
-
