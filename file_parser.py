@@ -12,11 +12,8 @@ from google.oauth2 import service_account
 # ✅ Authentication from Streamlit secrets (gdrive2)
 # ─────────────────────────────────────────────────────────────
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
-gdrive2_secrets = st.secrets["gdrive2"]
-
-creds = service_account.Credentials.from_service_account_info(
-    dict(gdrive2_secrets), scopes=SCOPES
-)
+gdrive_secrets = st.secrets["gdrive"]
+creds = service_account.Credentials.from_service_account_info(dict(gdrive_secrets), scopes=SCOPES)
 service = build("drive", "v3", credentials=creds)
 
 # ─────────────────────────────────────────────────────────────
