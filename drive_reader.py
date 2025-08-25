@@ -4,17 +4,14 @@ from googleapiclient.discovery import build
 from google.oauth2 import service_account
 
 # 📌 REQUIRED CONFIG
-SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
+
 FOLDER_NAME = 'AI_CEO_KnowledgeBase'  # Top-level folder name in your Google Drive
 
 # ✅ Load credentials from Streamlit Secrets [gdrive]
+SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 gdrive_secrets = st.secrets["gdrive"]
-creds = service_account.Credentials.from_service_account_info(
-    dict(gdrive_secrets), scopes=SCOPES
-)
-
-# Build the Google Drive service
-service = build('drive', 'v3', credentials=creds)
+creds = service_account.Credentials.from_service_account_info(dict(gdrive_secrets), scopes=SCOPES)
+service = build("drive", "v3", credentials=creds)
 
 def get_folder_id(service, folder_name):
     """Return the folder ID for a given folder name."""
