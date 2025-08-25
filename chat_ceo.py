@@ -9,13 +9,41 @@ import embed_and_store
 from answer_with_rag import answer
 
 # ──────────────────────────────────
+# Login System
+# ──────────────────────────────────
+USERNAME = "admin123"
+PASSWORD = "BestOrg123@#"
+
+def login():
+    st.title("🔐 Login to AI CEO Assistant")
+    with st.form("login_form"):
+        username_input = st.text_input("Username")
+        password_input = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Login")
+
+        if submitted:
+            if username_input == USERNAME and password_input == PASSWORD:
+                st.session_state["authenticated"] = True
+                st.success("Login successful.")
+                st.experimental_rerun()
+            else:
+                st.error("Invalid username or password.")
+
+# Initialize session state
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+
+if not st.session_state["authenticated"]:
+    login()
+    st.stop()
+
+# ──────────────────────────────────
 # Constants
 # ──────────────────────────────────
 HIST_PATH = Path("chat_history.json")
 REFRESH_PATH = Path("last_refresh.txt")
 UPLOAD_DIR = Path("docs")
 UPLOAD_DIR.mkdir(exist_ok=True)
-
 
 # ──────────────────────────────────
 # Helper Functions
@@ -50,6 +78,11 @@ def export_history_to_csv(history: list) -> bytes:
 st.set_page_config(page_title="AI CEO Assistant", page_icon="🧠", layout="wide")
 
 st.sidebar.title("🧠 AI CEO Panel")
+st.sidebar.markdown(f"👤 Logged in as: `{USERNAME}`")
+if st.sidebar.button("🔓 Logout"):
+    st.session_state["authenticated"] = False
+    st.experimental_rerun()
+
 mode = st.sidebar.radio("Navigation", ["💬 New Chat", "📜 View History", "🔁 Refresh Data"])
 
 # ──────────────────────────────────
