@@ -1,4 +1,12 @@
 .env
+chat_history.json
+parsed_data/
+embeddings/
+.env
+__pycache__/
+token.pickle
+credentials/
+
 
 credentials/
 token.pickle
