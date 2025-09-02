@@ -3,6 +3,11 @@ import re
 
 
 def simple_chunks(text: str, max_chars: int = 3500, overlap: int = 300) -> List[Dict]:
+    """
+    Split text into overlapping chunks at paragraph boundaries.
+    - max_chars: soft limit per chunk
+    - overlap: carry last N chars from previous chunk to next
+    """
     paras = [p.strip() for p in re.split(r"\n{2,}", text) if p.strip()]
     chunks, cur, size = [], [], 0
     for p in paras:
