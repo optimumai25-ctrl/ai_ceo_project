@@ -1,5 +1,3 @@
-# embed_and_store.py
-
 import os
 import time
 import pickle
@@ -8,39 +6,37 @@ from typing import Dict, Optional, List
 
 import numpy as np
 import faiss
-import openai
+from dotenv import load_dotenv
 from tqdm import tqdm
 
 from chunk_utils import simple_chunks
 
-# Load OpenAI key from Streamlit secrets (for production) or environment (for local)
-try:
-    import streamlit as st
-    openai.api_key = st.secrets["OPENAI_API_KEY"]
-except Exception:
-    from dotenv import load_dotenv
-    load_dotenv()
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+# -------- Load OpenAI API Key --------
+import streamlit as st
+import openai
 
-# Directories
+# Use secret key for Streamlit Cloud
+openai.api_key = st.secrets["OPENAI_API_KEY"]
+
+
+# -------- Paths & Config --------
 PARSED_DIR = Path("parsed_data")
 EMBED_DIR = Path("embeddings")
 EMBED_DIR.mkdir(parents=True, exist_ok=True)
 
-# Embedding settings
 EMBED_MODEL = "text-embedding-3-small"
 EMBED_DIM = 1536
 INDEX_PATH = EMBED_DIR / "faiss.index"
 META_PATH = EMBED_DIR / "metadata.pkl"
 
-# FAISS index setup
+# FAISS index
 base_index = faiss.IndexFlatL2(EMBED_DIM)
 index = faiss.IndexIDMap2(base_index)
+
 metadata: Dict[int, Dict] = {}  # id -> metadata
 next_id = 0
 
-
-# -------- EMBEDDING FUNCTION --------
+# -------- Embedding --------
 def get_embedding(text: str) -> Optional[np.ndarray]:
     for attempt in range(4):
         try:
@@ -60,13 +56,10 @@ def get_embedding(text: str) -> Optional[np.ndarray]:
     print("Failed to embed after retries.")
     return None
 
-
-# -------- INDEX UPDATER --------
 def add_to_index(vec: np.ndarray, vid: int):
     index.add_with_ids(vec.reshape(1, -1), np.array([vid], dtype=np.int64))
 
-
-# -------- MAIN PIPELINE --------
+# -------- Main --------
 def main():
     global next_id
     if not PARSED_DIR.exists():
@@ -99,7 +92,7 @@ def main():
                 "filename": fp.name,
                 "path": str(fp),
                 "chunk_id": ch["chunk_id"],
-                "text_preview": ch["text"][:1000],
+                "text_preview": ch["text"][:1000]
             }
             next_id += 1
 
@@ -107,9 +100,8 @@ def main():
     with open(META_PATH, "wb") as f:
         pickle.dump(metadata, f)
 
-    print(f"\u2705 Saved FAISS index to {INDEX_PATH}")
-    print(f"\u2705 Saved metadata for {len(metadata)} vectors to {META_PATH}")
-
+    print(f"✅ Saved FAISS index to {INDEX_PATH}")
+    print(f"✅ Saved metadata for {len(metadata)} vectors to {META_PATH}")
 
 if __name__ == "__main__":
     main()
