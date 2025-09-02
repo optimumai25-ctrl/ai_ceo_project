@@ -1,11 +1,13 @@
+# semantic_search.py
 import pickle
 from pathlib import Path
 from typing import List, Tuple, Dict
+
 import numpy as np
 import faiss
 from dotenv import load_dotenv
 
-
+# OpenAI client
 try:
     from openai import OpenAI
     client = OpenAI()
@@ -14,15 +16,14 @@ except Exception:
     import openai
     use_client = False
 
-
 load_dotenv()
 if not use_client:
     import os
     openai.api_key = os.getenv("OPENAI_API_KEY")
 
-
 EMBED_MODEL = "text-embedding-3-small"
 EMBED_DIM = 1536
+
 INDEX_PATH = Path("embeddings/faiss.index")
 META_PATH = Path("embeddings/metadata.pkl")
 
@@ -45,7 +46,7 @@ def load_resources():
         raise FileNotFoundError("Missing FAISS index or metadata. Run embed_and_store.py first.")
     index = faiss.read_index(str(INDEX_PATH))
     with open(META_PATH, "rb") as f:
-        metadata = pickle.load(f)
+        metadata = pickle.load(f)  # id -> dict
     return index, metadata
 
 
@@ -67,5 +68,5 @@ if __name__ == "__main__":
     hits = search(q, k=5)
     for i, (vid, dist, meta) in enumerate(hits, 1):
         cid = meta.get("chunk_id")
-        print(f"{i}. id={vid} dist={dist:.4f} file={meta.get('filename')} chunk={cid}")
+        print(f"{i}. id={vid}  dist={dist:.4f}  file={meta.get('filename')}  chunk={cid}")
         print(meta.get("text_preview", "")[:300], "\n---")
