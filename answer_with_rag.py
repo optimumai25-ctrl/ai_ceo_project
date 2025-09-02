@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 # OpenAI client
 try:
@@ -58,9 +58,12 @@ def ask_gpt(query: str, context: str) -> str:
         return resp.choices[0].message["content"]
 
 
-def answer(query: str, k: int = 5) -> str:
+def answer(query: str, k: int = 5, chat_history: Optional[List[Dict]] = None) -> str:
+    """
+    Answers a query using top-k semantic matches from the local vector store.
+    chat_history is accepted for API compatibility with callers but is not used.
+    """
     hits = search(query, k=k)
-    # Post-process citations to include chunk id in final text
     context = build_context(hits)
     out = ask_gpt(query, context)
     return out
@@ -68,3 +71,4 @@ def answer(query: str, k: int = 5) -> str:
 
 if __name__ == "__main__":
     print(answer("Summarize key risks mentioned in July financials and any mitigation actions."))
+
