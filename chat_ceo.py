@@ -8,9 +8,9 @@ import file_parser
 import embed_and_store
 from answer_with_rag import answer
 
-# ───────────────────────────────────────────────
-# 🛡️ Login System
-# ───────────────────────────────────────────────
+# ──────────────────────────────────
+# Login System
+# ──────────────────────────────────
 USERNAME = "admin123"
 PASSWORD = "BestOrg123@#"
 
@@ -24,11 +24,12 @@ def login():
         if submitted:
             if username_input == USERNAME and password_input == PASSWORD:
                 st.session_state["authenticated"] = True
-                st.success("✅ Login successful.")
-                st.rerun()
+                st.success("Login successful.")
+                st.rerun()  # Updated here
             else:
-                st.error("❌ Invalid username or password.")
+                st.error("Invalid username or password.")
 
+# Initialize session state
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
@@ -36,17 +37,17 @@ if not st.session_state["authenticated"]:
     login()
     st.stop()
 
-# ───────────────────────────────────────────────
-# 🔧 Constants & Paths
-# ───────────────────────────────────────────────
+# ──────────────────────────────────
+# Constants
+# ──────────────────────────────────
 HIST_PATH = Path("chat_history.json")
 REFRESH_PATH = Path("last_refresh.txt")
 UPLOAD_DIR = Path("docs")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-# ───────────────────────────────────────────────
-# 📦 Helper Functions
-# ───────────────────────────────────────────────
+# ──────────────────────────────────
+# Helper Functions
+# ──────────────────────────────────
 def load_history():
     if HIST_PATH.exists():
         return json.loads(HIST_PATH.read_text(encoding="utf-8"))
@@ -69,32 +70,31 @@ def load_refresh_time():
 
 def export_history_to_csv(history: list) -> bytes:
     df = pd.DataFrame(history)
-    return df.to_csv(index=False).encode("utf-8")
+    return df.to_csv(index=False).encode('utf-8')
 
-# ───────────────────────────────────────────────
-# 📋 Page Layout & Sidebar
-# ───────────────────────────────────────────────
+# ──────────────────────────────────
+# Page & Sidebar
+# ──────────────────────────────────
 st.set_page_config(page_title="AI CEO Assistant", page_icon="🧠", layout="wide")
 
 st.sidebar.title("🧠 AI CEO Panel")
 st.sidebar.markdown(f"👤 Logged in as: `{USERNAME}`")
-
 if st.sidebar.button("🔓 Logout"):
     st.session_state["authenticated"] = False
-    st.rerun()
+    st.rerun()  # Updated here
 
-mode = st.sidebar.radio("📍 Navigation", ["💬 New Chat", "📜 View History", "🔁 Refresh Data"])
+mode = st.sidebar.radio("Navigation", ["💬 New Chat", "📜 View History", "🔁 Refresh Data"])
 
-# ───────────────────────────────────────────────
-# 🔁 Mode: Refresh Embeddings from Drive
-# ───────────────────────────────────────────────
+# ──────────────────────────────────
+# Mode: Refresh Embeddings from Drive
+# ──────────────────────────────────
 if mode == "🔁 Refresh Data":
     st.title("🔁 Refresh AI Knowledge Base")
     st.caption("This will re-parse documents and re-embed knowledge vectors.")
     st.markdown(f"🧓 **Last Refreshed:** {load_refresh_time()}")
 
     if st.button("🚀 Run File Parser + Embedder"):
-        with st.spinner("🔄 Refreshing knowledge base..."):
+        with st.spinner("Refreshing knowledge base..."):
             try:
                 file_parser.main()
                 embed_and_store.main()
@@ -104,9 +104,9 @@ if mode == "🔁 Refresh Data":
             except Exception as e:
                 st.error(f"❌ Failed: {e}")
 
-# ───────────────────────────────────────────────
-# 📜 Mode: View Chat History
-# ───────────────────────────────────────────────
+# ──────────────────────────────────
+# Mode: View Chat History
+# ──────────────────────────────────
 elif mode == "📜 View History":
     st.title("📜 Chat History")
     history = load_history()
@@ -118,8 +118,8 @@ elif mode == "📜 View History":
             role = "👤 You" if turn.get("role") == "user" else "🧠 Assistant"
             timestamp = turn.get("timestamp", "N/A")
             st.markdown(f"**{role} | [{timestamp}]**  \n{turn.get('content', '')}")
-            st.markdown("---")
 
+        st.markdown("---")
         st.download_button(
             label="⬇️ Download Chat History as CSV",
             data=export_history_to_csv(history),
@@ -129,14 +129,14 @@ elif mode == "📜 View History":
 
         if st.button("🗑️ Clear Chat History"):
             reset_chat()
-            st.success("✅ History cleared.")
+            st.success("History cleared.")
 
-# ───────────────────────────────────────────────
-# 💬 Mode: New Chat Interface
-# ───────────────────────────────────────────────
+# ──────────────────────────────────
+# Mode: New Chat Interface
+# ──────────────────────────────────
 elif mode == "💬 New Chat":
     st.title("🧠 AI CEO Assistant")
-    st.caption("Ask about meetings, hiring, research, decisions, strategy, and more. Answers cite your documents.")
+    st.caption("Ask about meetings, projects, hiring, finances, and research. Answers cite your documents.")
     st.markdown(f"🧓 **Last Refreshed:** {load_refresh_time()}")
 
     history = load_history()
@@ -157,7 +157,7 @@ elif mode == "💬 New Chat":
         with st.chat_message("assistant"):
             with st.spinner("Thinking…"):
                 try:
-                    reply = answer(user_msg, k=7)
+                    reply = answer(user_msg, k=7, chat_history=history)
                 except Exception as e:
                     reply = f"Error: {e}"
             st.markdown(f"**[{datetime.now().strftime('%b-%d-%Y %I:%M%p')}]**  \n{reply}")
@@ -169,4 +169,3 @@ elif mode == "💬 New Chat":
         })
 
         save_history(history)
-
